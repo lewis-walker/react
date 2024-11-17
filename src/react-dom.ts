@@ -50,7 +50,13 @@ const _render = (reactNode: ReactNode, container: HTMLElement | null): void => {
         }
     });
 
-    props && props.children && props.children.forEach((child: ReactElement) => {
+    let children = props?.children
+
+    if (children && !Array.isArray(children)) {
+        children = [props.children]
+    }
+
+    children && children.forEach((child: ReactElement) => {
         _render(child, htmlElement);
     });
 
@@ -58,10 +64,10 @@ const _render = (reactNode: ReactNode, container: HTMLElement | null): void => {
 }
 
 const globalRender = (): void => {
-    container.childNodes.forEach(node => {
+    container.childNodes?.forEach(node => {
         node.remove()
     })
-    
+
     _render(rootNode, container)
 }
 

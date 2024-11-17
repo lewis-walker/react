@@ -20,11 +20,21 @@ type UseState<T> = {
     setValue: (value: T) => void;
 }
 
+type UseEffect = {
+    callback: () => void | (() => void);
+    cleanup: () => void;
+    dependencies: any[];
+}
+
 type FunctionComponentState = {
     id: string;
     reactElement: ReactElement;
+
     useStates: Array<UseState<any>>;
+    useEffects: Array<UseEffect>;
+
     currentStateIndex: number;
+    currentEffectIndex: number;
 }
 
 const functionStateStack: FunctionComponentState[] = []
@@ -53,6 +63,39 @@ const getUseState = <T>(initialValue: T) => {
     return useState
 }
 
+const getUseEffect = (callback: () => void | (() => void), dependencies: any[]) => {
+    if (!currentFunctionState) {
+        throw new Error("useEffect must be called within a function component")
+    }
+
+    let useEffect: UseEffect = currentFunctionState.useEffects[currentFunctionState.currentEffectIndex]
+
+    if (!useEffect) {
+        useEffect = { callback, dependencies, cleanup: () => void 0 }
+        currentFunctionState.useEffects[currentFunctionState.currentEffectIndex] = useEffect
+    }
+
+    if (useEffect.dependencies.length !== dependencies.length) {
+        throw new Error("useEffect dependencies length changed")
+    }
+    
+    for (let i = 0; i < dependencies.length; i++) {
+        if (useEffect.dependencies[i] !== dependencies[i]) {
+            useEffect.dependencies = dependencies
+            useEffect.callback = callback
+
+            useEffect.cleanup()
+            const result = useEffect.callback() || (() => void 0)
+            useEffect.cleanup = result
+
+            break 
+        }
+    }
+
+    currentFunctionState.currentEffectIndex++
+    return useEffect
+}
+
 const ensureFunctionComponentState = (reactElement: ReactElement) => {
     let functionComponentState: FunctionComponentState
 
@@ -66,10 +109,9 @@ const ensureFunctionComponentState = (reactElement: ReactElement) => {
     let id = fn.__REACTISH_FUNCTION_ID__
 
     if (!id) {
-        console.log("function does not have a __REACTISH_FUNCTION_ID__, generating one", JSON.stringify(reactElement, null, 2))
         id = genUuid()
         fn.__REACTISH_FUNCTION_ID__ = id
-        functionComponentState = { id, reactElement, useStates: [], currentStateIndex: 0 }
+        functionComponentState = { id, reactElement, useStates: [], useEffects: [], currentStateIndex: 0, currentEffectIndex: 0 }
         functionComponentStates[id] = functionComponentState
         return functionComponentState
     }
@@ -95,6 +137,7 @@ export const startRender = (reactElement: ReactElement) => {
     currentFunctionState = ensureFunctionComponentState(reactElement)
     functionStateStack.push(currentFunctionState)
     currentFunctionState.currentStateIndex = 0
+    currentFunctionState.currentEffectIndex = 0
 }
 
 export const endRender = () => {
@@ -103,18 +146,14 @@ export const endRender = () => {
 }
 
 export const createElement = (type: string, props: any, ...children: any[]): ReactElement => {
-    return { type, props: { ...props, children, javascriptType: typeof type } };
+    return { type, props: { ...props, a: 'thing',children, javascriptType: typeof type } };
 }
 
 export const useState = <T>(initialValue: T): [T, (value: T) => void] => {
-    if (!currentFunctionState) {
-        throw new Error("useState must be called within a function component")
-    }
-
     const useState = getUseState(initialValue)
     return [useState.value, useState.setValue]
 }
 
 export const useEffect = (callback: () => void, dependencies: any[]) => {
-    // callback();
+    getUseEffect(callback, dependencies)
 }
