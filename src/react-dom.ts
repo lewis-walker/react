@@ -83,6 +83,8 @@ export const render = (reactElement: ReactElement, _container: HTMLElement | nul
         throw new Error("Container is required");
     }
 
+    debugger
+
     container = _container
     rootNode = reactElement
     queueRender();

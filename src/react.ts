@@ -135,6 +135,7 @@ export const setGlobalRender = (render: () => void) => {
 }
 
 export type ReactElement = {
+    a: number,
     id?: string;
     type: string | Function;
     props: any;
@@ -158,7 +159,7 @@ export const endRender = () => {
 }
 
 export const createElement = (type: string, props: any, ...children: any[]): ReactElement => {
-    return { type, props: { ...props,children, javascriptType: typeof type } };
+    return { type, a: 1, props: { ...props,children, javascriptType: typeof type } };
 }
 
 export const useState = <T>(initialValue: T): [T, (value: T | ((v: T) => T)) => void] => {
