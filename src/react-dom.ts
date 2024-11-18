@@ -35,6 +35,13 @@ const _render = (reactNode: ReactNode, container: HTMLElement | null): void => {
 
     const htmlElement: HTMLElement = element;
 
+    if (reactElement.ref) {
+        if (!reactElement.ref.current) {
+            reactElement.ref.current = htmlElement;
+            queueRender();
+        }
+    }
+
     props && Object.entries(props).forEach(([key, value]) => {
         if (key.startsWith('on')) {
             // Handle event listeners

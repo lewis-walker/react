@@ -1,5 +1,5 @@
 import * as React from "./react";
-import { useState, useEffect } from "./react";
+import { useState, useEffect, useRef } from "./react";
 import { Counter } from "./counter";
 
 const isPrime = (num: number) => {
@@ -12,6 +12,8 @@ export const App = () => {
   const [initialCount, setInitialCount] = useState(Math.round(Math.random() * 10))
   const [message, setMessage] = useState("")
 
+  const buttonRef = useRef<HTMLButtonElement>()
+
   useEffect(() => {
     if (isPrime(initialCount)) {
       setMessage("Initial count is prime")
@@ -21,10 +23,17 @@ export const App = () => {
     }
   }, [initialCount])
 
+  const buttonElement = buttonRef.current
+  console.log('Outside effect: buttonElement', buttonElement)
+
+  useEffect(() => {
+    console.log('Inside effect: buttonElement', buttonElement)
+  }, [buttonElement])
+
   return (
     <div>
       <Counter initialCount={initialCount} onChange={console.log} />
-      <button onClick={() => setInitialCount(Math.round(Math.random() * 10))}>Randomize</button>
+      <button ref={buttonRef} onClick={() => setInitialCount(Math.round(Math.random() * 10))}>Randomize</button>
       <p>{message}</p>
     </div>
   )

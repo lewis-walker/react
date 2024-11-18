@@ -127,6 +127,7 @@ export type ReactElement = {
     id?: string;
     type: string | Function;
     props: any;
+    ref?: {current: HTMLElement | undefined }
 }
 
 export type ReactNode = string | number | boolean | null | undefined | ReactElement
@@ -146,7 +147,7 @@ export const endRender = () => {
 }
 
 export const createElement = (type: string, props: any, ...children: any[]): ReactElement => {
-    return { type, props: { ...props, a: 'thing',children, javascriptType: typeof type } };
+    return { type, props: { ...props,children, javascriptType: typeof type } };
 }
 
 export const useState = <T>(initialValue: T): [T, (value: T) => void] => {
@@ -156,4 +157,9 @@ export const useState = <T>(initialValue: T): [T, (value: T) => void] => {
 
 export const useEffect = (callback: () => void, dependencies: any[]) => {
     getUseEffect(callback, dependencies)
+}
+
+export const useRef = <T>(initialValue?: T) => {
+    const [ref ] = useState({ current: initialValue })
+    return ref
 }
