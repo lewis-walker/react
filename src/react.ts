@@ -17,7 +17,7 @@ export const queueRender = () => {
 
 type UseState<T> = {
     value: T;
-    setValue: (value: T) => void;
+    setValue: (value: T | ((t: T) => T)) => void;
 }
 
 type UseEffect = {
@@ -51,9 +51,15 @@ const getUseState = <T>(initialValue: T) => {
 
     if (!useState) {
         const value = initialValue
-        useState = { value, setValue: (value: T) => void 0 }
-        useState.setValue = (value: T) => {
-            useState.value = value
+        useState = { value, setValue: value => value }
+        useState.setValue = arg => {
+            if (typeof arg === "function") {
+                const fn: Function = arg
+                useState.value = fn(useState.value)
+            } else {
+                useState.value = arg
+            }
+
             queueRender()
         }
         currentFunctionState.useStates[currentFunctionState.currentStateIndex] = useState
@@ -71,8 +77,13 @@ const getUseEffect = (callback: () => void | (() => void), dependencies: any[]) 
     let useEffect: UseEffect = currentFunctionState.useEffects[currentFunctionState.currentEffectIndex]
 
     if (!useEffect) {
-        useEffect = { callback, dependencies, cleanup: () => void 0 }
+        useEffect = { callback, dependencies: dependencies.length === 0 ?
+            [undefined] : dependencies, cleanup: () => void 0 }
         currentFunctionState.useEffects[currentFunctionState.currentEffectIndex] = useEffect
+    }
+
+    if (dependencies.length === 0) {
+        dependencies = [1]
     }
 
     if (useEffect.dependencies.length !== dependencies.length) {
@@ -150,7 +161,7 @@ export const createElement = (type: string, props: any, ...children: any[]): Rea
     return { type, props: { ...props,children, javascriptType: typeof type } };
 }
 
-export const useState = <T>(initialValue: T): [T, (value: T) => void] => {
+export const useState = <T>(initialValue: T): [T, (value: T | ((v: T) => T)) => void] => {
     const useState = getUseState(initialValue)
     return [useState.value, useState.setValue]
 }
