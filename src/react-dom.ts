@@ -1,9 +1,30 @@
-import { endRender, isReactElement, queueRender, ReactElement, ReactNode, setGlobalRender, startRender } from "./react";
+import { endRender, isReactElement, queueRender, setGlobalRender, startRender } from "./react";
+import { ReactElement, ReactNode } from "./react-model";
 
 let container: HTMLElement
 let rootNode: ReactNode
 
+const getAncestry = (element: ReactElement): ReactElement[] => {
+    const ancestry: ReactElement[] = []
+    let currentElement: ReactElement | undefined = element.parent
+
+    while (currentElement) {
+        ancestry.unshift(currentElement)
+        currentElement = currentElement.parent
+    }
+
+    return ancestry
+}
+
+
 const _render = (reactNode: ReactNode, container: HTMLElement | null): void => {
+    if (Array.isArray(reactNode)) {
+        reactNode.forEach(node => {
+            _render(node, container)
+        })
+        return
+    }
+
     if (!container) {
         throw new Error("Container is required");
     }
@@ -26,7 +47,9 @@ const _render = (reactNode: ReactNode, container: HTMLElement | null): void => {
 
     if (typeof type === "function") {
         startRender(reactElement)
-        _render(type(props), container);
+        const functionalComponentOutput = type(props)
+        functionalComponentOutput.parent = reactElement
+        _render(functionalComponentOutput, container);
         endRender()
         return
     }
@@ -82,8 +105,6 @@ export const render = (reactElement: ReactElement, _container: HTMLElement | nul
     if (!_container) {
         throw new Error("Container is required");
     }
-
-    debugger
 
     container = _container
     rootNode = reactElement

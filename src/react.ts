@@ -1,3 +1,6 @@
+import { createContextProvider } from "./context-provider";
+import { Context, ReactElement, ReactNode } from "./react-model";
+
 let globalRender: () => void
 
 export const genUuid = () => Math.random().toString(36).substring(2, 15);
@@ -76,30 +79,34 @@ const getUseEffect = (callback: () => void | (() => void), dependencies: any[]) 
 
     let useEffect: UseEffect = currentFunctionState.useEffects[currentFunctionState.currentEffectIndex]
 
+    const runEffect = (effect: UseEffect, dependencies: any[], callback: () => void | (() => void)) => {
+        effect.dependencies = dependencies
+        effect.callback = callback
+        effect.cleanup()
+
+        try { 
+            const result = effect.callback() || (() => void 0)
+            effect.cleanup = result
+        } catch (e) { 
+            console.error(e)
+        }
+    }
+
     if (!useEffect) {
-        useEffect = { callback, dependencies: dependencies.length === 0 ?
-            [undefined] : dependencies, cleanup: () => void 0 }
+        useEffect = { callback, dependencies, cleanup: () => void 0 }
         currentFunctionState.useEffects[currentFunctionState.currentEffectIndex] = useEffect
-    }
-
-    if (dependencies.length === 0) {
-        dependencies = [1]
-    }
-
-    if (useEffect.dependencies.length !== dependencies.length) {
-        throw new Error("useEffect dependencies length changed")
-    }
-    
-    for (let i = 0; i < dependencies.length; i++) {
-        if (useEffect.dependencies[i] !== dependencies[i]) {
-            useEffect.dependencies = dependencies
-            useEffect.callback = callback
-
-            useEffect.cleanup()
-            const result = useEffect.callback() || (() => void 0)
-            useEffect.cleanup = result
-
-            break 
+        runEffect(useEffect, dependencies, callback)
+    } else {
+        if (useEffect.dependencies.length !== dependencies.length) {
+            throw new Error("useEffect dependencies length changed")
+        }
+        
+        for (let i = 0; i < dependencies.length; i++) {
+            if (useEffect.dependencies[i] !== dependencies[i]) {
+                useEffect.callback = callback
+                runEffect(useEffect, dependencies, callback)
+                break 
+            }
         }
     }
 
@@ -134,16 +141,6 @@ export const setGlobalRender = (render: () => void) => {
     globalRender = render
 }
 
-export type ReactElement = {
-    a: number,
-    id?: string;
-    type: string | Function;
-    props: any;
-    ref?: {current: HTMLElement | undefined }
-}
-
-export type ReactNode = string | number | boolean | null | undefined | ReactElement
-
 export const isReactElement = (node: ReactNode) => typeof node === 'object' && node !== null && 'type' in node
 
 export const startRender = (reactElement: ReactElement) => {
@@ -159,7 +156,9 @@ export const endRender = () => {
 }
 
 export const createElement = (type: string, props: any, ...children: any[]): ReactElement => {
-    return { type, a: 1, props: { ...props,children, javascriptType: typeof type } };
+    const element: ReactElement = { type, props: { ...props, children } }
+    element.props.children = element.props.children.map((child: any) => isReactElement(child) ? {...child, parent: element} : child)
+    return element
 }
 
 export const useState = <T>(initialValue: T): [T, (value: T | ((v: T) => T)) => void] => {
@@ -174,4 +173,17 @@ export const useEffect = (callback: () => void, dependencies: any[]) => {
 export const useRef = <T>(initialValue?: T) => {
     const [ref ] = useState({ current: initialValue })
     return ref
+}
+
+export const createContext = <T>(initialValue: T) => {
+    const context: Context<T> = { 
+        Provider: createContextProvider<T>(initialValue)
+    }
+
+    context.Provider.provides = context
+    return context
+}
+
+export const useContext = <T>(context: Context<T>) => {
+    return context.Provider.value
 }

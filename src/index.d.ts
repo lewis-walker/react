@@ -1,7 +1,9 @@
-declare module 'react/jsx-runtime' {
-    export namespace JSX {
-        interface IntrinsicElements {
-            [elemName: string]: any;
-        }
+declare namespace JSX {
+    interface IntrinsicElements {
+        [elemName: string]: any;
     }
+}
+
+declare module 'react/jsx-runtime' {
+    export { JSX };
 }
