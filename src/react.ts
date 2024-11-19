@@ -156,7 +156,7 @@ export const endRender = () => {
 }
 
 export const createElement = (type: string, props: any, ...children: any[]): ReactElement => {
-    const element: ReactElement = { type, props: { ...props, children } }
+    const element: ReactElement = { type, props: { ...props, children }, ref: props.ref }
     element.props.children = element.props.children.map((child: any) => isReactElement(child) ? {...child, parent: element} : child)
     return element
 }
