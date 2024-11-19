@@ -184,6 +184,26 @@ export const createContext = <T>(initialValue: T) => {
     return context
 }
 
+const getAncestry = (element: ReactElement): ReactElement[] => {
+    const ancestry: ReactElement[] = []
+    let currentElement: ReactElement | undefined = element.parent
+
+    while (currentElement) {
+        ancestry.unshift(currentElement)
+        currentElement = currentElement.parent
+    }
+
+    return ancestry
+}
+
 export const useContext = <T>(context: Context<T>) => {
-    return context.Provider.value
+    if (!currentFunctionState) {
+        throw new Error("useContext must be called within a function component")
+    }
+
+    const ancestry = getAncestry(currentFunctionState.reactElement)
+    const contextProvider: any = ancestry.find(e => e.type === context.Provider)
+    const provider: Context<T>['Provider'] = contextProvider?.type
+
+    return provider.value
 }

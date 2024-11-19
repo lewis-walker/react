@@ -4,19 +4,6 @@ import { ReactElement, ReactNode } from "./react-model";
 let container: HTMLElement
 let rootNode: ReactNode
 
-const getAncestry = (element: ReactElement): ReactElement[] => {
-    const ancestry: ReactElement[] = []
-    let currentElement: ReactElement | undefined = element.parent
-
-    while (currentElement) {
-        ancestry.unshift(currentElement)
-        currentElement = currentElement.parent
-    }
-
-    return ancestry
-}
-
-
 const _render = (reactNode: ReactNode, container: HTMLElement | null): void => {
     if (Array.isArray(reactNode)) {
         reactNode.forEach(node => {
@@ -86,7 +73,11 @@ const _render = (reactNode: ReactNode, container: HTMLElement | null): void => {
         children = [props.children]
     }
 
-    children && children.forEach((child: ReactElement) => {
+    children && children.forEach((child: ReactNode) => {
+        if (isReactElement(child)) {
+            const c: any = child
+            c.parent = reactElement;
+        }
         _render(child, htmlElement);
     });
 
