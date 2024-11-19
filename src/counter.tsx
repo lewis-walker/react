@@ -28,7 +28,7 @@ export const Counter = ({ initialCount, onChange }: CounterProps) => {
     }
 
     return (
-        <div>
+        <div style="display: flex; column-gap: 1rem; align-items: baseline;">
             <p>{count}</p>
             <button onClick={handleIncrement}>Increment</button>
             <button onClick={handleDecrement}>Decrement</button>

@@ -43,12 +43,12 @@ export const App = () => {
 
   return (
     <LoggingProvider.Provider value={console}>
-      <div>
-        <div>{count}</div>
-        <Counter initialCount={initialCount} onChange={console.log} />
+      <div>Counter: {count}</div>
+      <div style="display: flex; align-items: baseline">
+        Value:&nbsp;<Counter initialCount={initialCount} onChange={console.log} />
+      </div>
         <button ref={buttonRef} onClick={() => { setInitialCount(Math.ceil(Math.random() * 10))}}>Randomize</button>
         <p>{message}</p>
-      </div>
     </LoggingProvider.Provider>
   )
 }
